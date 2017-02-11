@@ -54,19 +54,50 @@ class App extends Component {
   }
 
   onSubmitSeedWord = () => {
-    const seedWord = this.refs.seedWord.vlaue
-    firebase.submitSeedWord(seedWord)
+    const seedWord = this.refs.seedWord.value
+    const roundKey = _.get(this.state, 'roomData.status.currentRound')
+    firebase.submitSeedWord(seedWord, roundKey)
   }
 
   renderSeedInput = () => {
     const roundKey = _.get(this.state, 'roomData.status.currentRound')
+    const gameProgress = _.get(this.state, 'roomData.status.progress')
     const seedPlayer = _.get(this.state, 'roomData.rounds.' + roundKey + '.seed.player')
-    if (seedPlayer && seedPlayer === this.state.currentPlayer) {
+    if (
+      gameProgress === PROGRESS.WAITING_FOR_SEED &&
+      seedPlayer && seedPlayer === this.state.currentPlayer
+    ) {
       return (
         <div>
           <h4>Think of anything.</h4>
           <input type="text" placeholder="let your mind be free!" ref="seedWord" />
           <Button onClick={this.onSubmitSeedWord}>Submit</Button>
+        </div>
+      )
+    }
+  }
+
+  onSubmitConnectionWord = async () => {
+    const connectionWord = this.refs.connectionWord.value
+    const roundKey = _.get(this.state, 'roomData.status.currentRound')
+    await firebase.submitConnectionWord(connectionWord, roundKey, this.state.currentPlayer)
+  }
+
+  renderWordConnection = () => {
+    const roundKey = _.get(this.state, 'roomData.status.currentRound')
+    const gameProgress = _.get(this.state, 'roomData.status.progress')
+    const seedPlayer = _.get(this.state, 'roomData.rounds.' + roundKey + '.seed.player')
+    const seedWord = _.get(this.state, 'roomData.rounds.' + roundKey + '.seed.word')
+    if (
+      gameProgress === PROGRESS.WAITING_FOR_CONNECTIONS &&
+      seedPlayer && seedPlayer !== this.state.currentPlayer
+    ) {
+      return (
+        <div>
+          <h3>{seedPlayer} submitted the word: {seedWord}</h3>
+          <p>What comes to mind?</p>
+          <input type="text" placeholder={'Channel your inner ' + seedPlayer + '!'} ref="connectionWord" />
+          <Button onClick={this.onSubmitConnectionWord}>Submit</Button>
         </div>
       )
     }
@@ -93,11 +124,12 @@ class App extends Component {
               <Button onClick={this.onJoinGame}>Join Game</Button>
             </div>
           }
-          {[PROGRESS.IN_PROGRESS, PROGRESS.ENDED].includes(gameProgress)?
-            null :
-            <Button onClick={this.onBeginGame}>Begin Game</Button>
+          {gameProgress === PROGRESS.WAITING_TO_BEGIN ?
+            <Button onClick={this.onBeginGame}>Begin Game</Button> :
+            null
           }
           {this.renderSeedInput()}
+          {this.renderWordConnection()}
         </div>
       );
     }

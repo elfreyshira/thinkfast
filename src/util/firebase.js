@@ -34,6 +34,9 @@ export async function startNewGame(username) {
         role: ROLES.CREATOR,
         createdAt: new Date().valueOf()
       }
+    },
+    status: {
+      progress: PROGRESS.WAITING_TO_BEGIN
     }
   })
   return newRoomID
@@ -77,7 +80,7 @@ export async function beginGame() {
   })
 
   await fbref('rooms', roomID, 'status').set({
-    progress: PROGRESS.IN_PROGRESS,
+    progress: PROGRESS.WAITING_FOR_SEED,
     currentRound: newRoundKey
   })
 
@@ -88,7 +91,7 @@ export async function beginGame() {
   //     players: {},
   //     roomID: '4J2L',
   //     status: {
-  //       progress: 'IN_PROGRESS' || 'ENDED' || 'UNSTARTED',
+  //       progress: GAME_ENDED || WAITING_FOR_NEXT_ROUND || WAITING_TO_BEGIN || WAITING_FOR_CONNECTIONS || WAITING_FOR_SEED,
   //       currentRound: a35gs09332erw
   //     },
   //     playerState: {
@@ -110,7 +113,7 @@ export async function beginGame() {
   //           word: 'poop',
   //           createdAt: 23857324
   //         },
-  //         submissions: { // array
+  //         connections: { // array
   //           001: {
   //             player: 'rosanna',
   //             word: 'butt',
@@ -130,8 +133,19 @@ export async function beginGame() {
 
 }
 
-export function submitSeedWord(seedWord) {
-  console.log('submitSeedWord')
+export async function submitSeedWord(seedWord, roundKey) {
+  const roomID = getRoomID()
+  await fbref('rooms', roomID, 'rounds', roundKey, 'seed/word').set(seedWord)
+  return await fbref('rooms', roomID, 'status/progress').set(PROGRESS.WAITING_FOR_CONNECTIONS)
+}
+
+export async function submitConnectionWord(connectionWord, roundKey, currentPlayer) {
+  const roomID = getRoomID()
+  await fbref('rooms', roomID, 'rounds', roundKey, 'connections').push({
+    player: currentPlayer,
+    word: connectionWord,
+    createdAt: new Date().valueOf()
+  })
 }
 
 export function onUpdate(roomID, callback) {
@@ -145,5 +159,6 @@ export default {
   joinGame,
   beginGame,
   submitSeedWord,
+  submitConnectionWord,
   onUpdate
 }
