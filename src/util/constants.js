@@ -1,0 +1,15 @@
+export const ROLES = {
+  CREATOR: 'CREATOR',
+  PARTICIPANT: 'PARTICIPANT'
+}
+
+export const PROGRESS = {
+  IN_PROGRESS: 'IN_PROGRESS',
+  UNSTARTED: 'UNSTARTED',
+  ENDED: 'ENDED'
+}
+
+export default {
+  ROLES,
+  PROGRESS
+}
